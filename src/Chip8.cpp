@@ -1,16 +1,21 @@
 #include "Chip8.h"
 
-Chip8::Chip8(const std::string& filename, const int width, const int height) : window(sf::VideoMode(width, height), "CHIP-8 works!"),
-																			   Engine(std::chrono::system_clock::now().time_since_epoch().count()), 
-																			   dist(0, 255U)
+Chip8::Chip8(const std::string& filename, const int width, const int height) : Engine(std::chrono::system_clock::now().time_since_epoch().count()), 
+                                                                               dist(0, 255U),                      
+                                                                               window(sf::VideoMode(sf::Vector2u(width, height)), "CHIP-8 works!"),
+                                                                               texture(),
+                                                                               sprite(texture)
 {
-	texture.create(SCREEN_WIDTH, SCREEN_HEIGHT);
+	//texture.create(SCREEN_WIDTH, SCREEN_HEIGHT);
 	
 	this->scale_x = static_cast<float>(window.getSize().x) / SCREEN_WIDTH;
 	this->scale_y = static_cast<float>(window.getSize().y) / SCREEN_HEIGHT;
 
-	sprite.setTexture(texture);
-	sprite.setScale(scale_x, scale_y);
+	//sprite.setTexture(texture);
+	//sprite sf::Sprite(texture);
+  //this->texture
+  
+  sprite.setScale({scale_x, scale_y});
 
 	//dist = std::uniform_int_distribution<uint16_t>(0, 255U);
 
@@ -59,31 +64,30 @@ void Chip8::loadGame(const std::string& filename) {
 }
 
 void Chip8::handleEvents()
-{
-	sf::Event event;
+{	
 	
-	
-	while (window.pollEvent(event)) {
+	while (auto event = window.pollEvent()) {
 
-		if (event.type == sf::Event::Closed || (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
-			window.close();
+		if (event->is<sf::Event::Closed>() || (event->is<sf::Event::KeyPressed>() &&
+        event->getIf<sf::Event::KeyPressed>()->code == sf::Keyboard::Key::Escape))
+        window.close();
 
-		key_list[0] = (sf::Keyboard::isKeyPressed(sf::Keyboard::X)) ? 1 : 0;
-		key_list[1] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1)) ? 1 : 0;
-		key_list[2] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2)) ? 1 : 0;
-		key_list[3] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3)) ? 1 : 0;
-		key_list[4] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) ? 1 : 0;
-		key_list[5] = (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) ? 1 : 0;
-		key_list[6] = (sf::Keyboard::isKeyPressed(sf::Keyboard::E)) ? 1 : 0;
-		key_list[7] = (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) ? 1 : 0;
-		key_list[8] = (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) ? 1 : 0;
-		key_list[9] = (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) ? 1 : 0;
-		key_list[10] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) ? 1 : 0;
-		key_list[11] = (sf::Keyboard::isKeyPressed(sf::Keyboard::C)) ? 1 : 0;
-		key_list[12] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4)) ? 1 : 0;
-		key_list[13] = (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) ? 1 : 0;
-		key_list[14] = (sf::Keyboard::isKeyPressed(sf::Keyboard::F)) ? 1 : 0;
-		key_list[15] = (sf::Keyboard::isKeyPressed(sf::Keyboard::V)) ? 1 : 0;
+		key_list[0] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::X)) ? 1 : 0;
+		key_list[1] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num1)) ? 1 : 0;
+		key_list[2] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num2)) ? 1 : 0;
+		key_list[3] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num3)) ? 1 : 0;
+		key_list[4] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)) ? 1 : 0;
+		key_list[5] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)) ? 1 : 0;
+		key_list[6] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) ? 1 : 0;
+		key_list[7] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)) ? 1 : 0;
+		key_list[8] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) ? 1 : 0;
+		key_list[9] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)) ? 1 : 0;
+		key_list[10] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Z)) ? 1 : 0;
+		key_list[11] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::C)) ? 1 : 0;
+		key_list[12] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num4)) ? 1 : 0;
+		key_list[13] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)) ? 1 : 0;
+		key_list[14] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::F)) ? 1 : 0;
+		key_list[15] = (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::V)) ? 1 : 0;
 	}
 	
 }
@@ -96,7 +100,7 @@ void Chip8::draw()
 		for (auto x = 0; x < SCREEN_WIDTH; x++) {
 			uint32_t graphics = gfx[x + (64 * y)];
 			if (graphics > 0) {
-				rect.setPosition(static_cast<float>(x * this->scale_x), static_cast<float>(y * this->scale_y));
+				rect.setPosition(sf::Vector2f(x * this->scale_x, y * this->scale_y));
 				this->window.draw(rect);
 			}
 		}
@@ -223,7 +227,7 @@ void Chip8::emulateCycle()
 	case 0xD000: // DXYN : Display n-byte sprite starting at memory location I at (Vx, Vy), set Vf = collision
 	{
 		unsigned short n = opcode & 0x000F;
-		unsigned short vx = V[(opcode & 0x0F00) >> 8] % SCREEN_WIDTH; // 2's power olduðu için optimize edilebilir.
+		unsigned short vx = V[(opcode & 0x0F00) >> 8] % SCREEN_WIDTH; // 2's power olduï¿½u iï¿½in optimize edilebilir.
 		unsigned short vy = V[(opcode & 0x00F0) >> 4] % SCREEN_WIDTH;
 		V[0xF] = 0;
 		for (auto y = 0; y < n; y++) {
