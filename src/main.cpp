@@ -1,17 +1,17 @@
-// main.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
 #include "Chip8.h"
 #include <iostream>
 
-
-
-int main()
+int main(int argc, char* argv[])
 {
-    Chip8 chip("./roms/space_invaders.ch8");
+  if (argc != 2) {
+    std::cerr << "Usage: " << argv[0] << " <path_to_rom>\n";
+    return 1;
+  }
 
-    
-    chip.run();
-    
+  std::string rom_path = argv[1];
 
-    return 0;
+  Chip8 chip(rom_path);
+  chip.run();
+
+  return 0;
 }
